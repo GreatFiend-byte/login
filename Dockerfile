@@ -1,14 +1,13 @@
-# Imagen base con Java 17 (compatible con Spring Boot 3.x)
-FROM eclipse-temurin:17-jdk-alpine
-
-# Directorio de trabajo dentro del contenedor
+# Fase 1: Construir el JAR con Maven
+FROM maven:3.8.6-openjdk-17 AS builder
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests  # Genera el JAR en /app/target/
 
-# Copia el jar generado por Maven al contenedor
-COPY target/login-0.0.1-SNAPSHOT.jar /app/ms-login.jar
-
-# Expone el puerto por defecto de Spring Boot
+# Fase 2: Imagen final con el JAR
+FROM openjdk:17
+WORKDIR /app
+COPY --from=builder target/login-0.0.1-SNAPSHOT.jar ./app.jar  # Copia el JAR generado
 EXPOSE 8083
-
-# Comando para ejecutar la aplicación Spring Boot
-ENTRYPOINT ["java", "-jar", "ms-login.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
